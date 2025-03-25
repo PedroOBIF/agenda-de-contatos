@@ -1,11 +1,49 @@
+import json
+
 agenda = []
 
+def carregar_agenda():
+    try:
+        with open('agenda.json', 'r') as f:
+            return json.load(f)
+    except FileNotFoundError:
+        return []
+    except json.JSONDecodeError:
+        return []
+
+def salvar_agenda():
+    with open('agenda.json', 'w') as f:
+        json.dump(agenda, f, indent=4)
+
+def validar_telefone(telefone):
+    if not telefone.isdigit() or len(telefone) < 10:
+        raise ValueError("Por favor, insira um número de telefone válido (apenas números e com pelo menos 10 dígitos).")
+
 def adicionar_contato():
-    nome = input("Insira o nome do contato: ")
+    nome = input("Insira o nome do contato: ").strip()
+    if not nome:
+        print("O nome do contato não pode ser vazio.")
+        return
     telefone = input("Insira o telefone do contato: ")
-    favorito = input("O contato é favorito? (s/n): ").lower() == 's'
+    try:
+        validar_telefone(telefone)
+    except ValueError as e:
+        print(e)
+        return
+
+    while True:
+        try:
+            favorito = input("O contato é favorito? (s/n): ").lower()
+            if favorito not in ['s', 'n']:
+                raise ValueError("Por favor, digite apenas 's' ou 'n'.")
+            favorito = favorito == 's'
+            break
+        except ValueError as e:
+            print(e)
+
     contato = {"nome": nome, "telefone": telefone, "favorito": favorito}
     agenda.append(contato)
+    salvar_agenda()
     print("Contato adicionado.")
 
 def listar_contatos():
@@ -17,7 +55,10 @@ def listar_contatos():
             print(f"{contato['nome']} - {contato['telefone']}{status_favorito}")
 
 def buscar_contato():
-    nome = input("Digite o nome do contato que deseja buscar: ")
+    nome = input("Digite o nome do contato que deseja buscar: ").strip()
+    if not nome:
+        print("O nome não pode ser vazio.")
+        return
     for contato in agenda:
         if contato["nome"].lower() == nome.lower():
             status_favorito = " (Favorito)" if contato["favorito"] else ""
@@ -26,33 +67,53 @@ def buscar_contato():
     print("Contato não encontrado.")
 
 def atualizar_contato():
-    nome = input("Digite o nome do contato que deseja atualizar: ")
+    nome = input("Digite o nome do contato que deseja atualizar: ").strip()
+    if not nome:
+        print("O nome não pode ser vazio.")
+        return
     for contato in agenda:
         if contato["nome"].lower() == nome.lower():
             contato["nome"] = input("Novo nome: ") or contato["nome"]
             contato["telefone"] = input("Novo telefone: ") or contato["telefone"]
-            favorito = input("O contato é favorito? (s/n): ").lower()
-            if favorito in ['s', 'n']:
-                contato["favorito"] = favorito == 's'
+            
+            while True:
+                try:
+                    favorito = input("O contato é favorito? (s/n): ").lower()
+                    if favorito not in ['s', 'n']:
+                        raise ValueError("Por favor, digite apenas 's' ou 'n'.")
+                    contato["favorito"] = favorito == 's'
+                    break
+                except ValueError as e:
+                    print(e)
+
+            salvar_agenda()
             print("Contato atualizado.")
             return
     print("Contato não encontrado.")
 
 def remover_contato():
-    nome = input("Digite o nome do contato que deseja remover: ")
+    nome = input("Digite o nome do contato que deseja remover: ").strip()
+    if not nome:
+        print("O nome não pode ser vazio.")
+        return
     for contato in agenda:
         if contato["nome"].lower() == nome.lower():
             agenda.remove(contato)
+            salvar_agenda()
             print("Contato removido.")
             return
     print("Contato não encontrado.")
 
 def marcar_desmarcar_favorito():
-    nome = input("Digite o nome do contato que deseja marcar ou desmarcar como favorito: ")
+    nome = input("Digite o nome do contato que deseja marcar ou desmarcar como favorito: ").strip()
+    if not nome:
+        print("O nome não pode ser vazio.")
+        return
     for contato in agenda:
         if contato["nome"].lower() == nome.lower():
             contato["favorito"] = not contato["favorito"]
             status = "marcado" if contato["favorito"] else "desmarcado"
+            salvar_agenda()
             print(f"Contato {status} como favorito.")
             return
     print("Contato não encontrado.")
@@ -66,6 +127,9 @@ def listar_favoritos():
             print(f"{contato['nome']} - {contato['telefone']} (Favorito)")
 
 def menu():
+    global agenda
+    agenda = carregar_agenda()
+
     while True:
         print("\nAGENDA DE CONTATOS")
         print("1. Adicionar contato")
@@ -77,27 +141,31 @@ def menu():
         print("7. Listar contatos favoritos")
         print("8. Sair")
         
-        opcao = input("Escolha uma opção: ")
+        try:
+            opcao = int(input("Escolha uma opção: "))
+            if opcao < 1 or opcao > 8:
+                raise ValueError("Opção inválida.")
+        except ValueError as e:
+            print(f"Erro: {e}")
+            continue
         
-        if opcao == '1':
+        if opcao == 1:
             adicionar_contato()
-        elif opcao == '2':
+        elif opcao == 2:
             listar_contatos()
-        elif opcao == '3':
+        elif opcao == 3:
             buscar_contato()
-        elif opcao == '4':
+        elif opcao == 4:
             atualizar_contato()
-        elif opcao == '5':
+        elif opcao == 5:
             remover_contato()
-        elif opcao == '6':
+        elif opcao == 6:
             marcar_desmarcar_favorito()
-        elif opcao == '7':
+        elif opcao == 7:
             listar_favoritos()
-        elif opcao == '8':
+        elif opcao == 8:
             print("Saindo do programa...")
             break
-        else:
-            print("Opção inválida.")
 
 menu()
 
